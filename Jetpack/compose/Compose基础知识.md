@@ -29,20 +29,20 @@ private fun Greeting(name: String) {
 
 ```kotlin
 class MainActivity: AppCompatActivity() {
-	override fun onCreate(savedInstanceState: Bundle?) {
-		super.onCreate(savedInstanceState)
-		setContent {
-			BasicsCodelabTheme {
-				// A surface container using the 'background' color from the theme
-				Surface(
-					modifier = Modifier.fillMaxSize(),
-					color = MaterialTheme.colorScheme.background
-				){
-					Greeting("Android")
-				}
-			}
-		}
-	}
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            BasicsCodelabTheme {
+                // A surface container using the 'background' color from the theme
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ){
+                    Greeting("Android")
+                }
+            }
+        }
+    }
 }
 ```
 
@@ -54,9 +54,9 @@ BasicsCodelabTheme 是为可组合函数设置样式的一种方式。如需查�
 @Preview(showbackground = true, name = "Text preview")
 @Compose
 fun DefaultPreview(){
-	BasicsCodelabTheme {
-		Greeting(name = "Android")
-	}
+    BasicsCodelabTheme {
+        Greeting(name = "Android")
+    }
 }
 ```
 
@@ -74,9 +74,9 @@ Surface 和 MaterialTheme 是与 Material Design 相关的概念。Material Desi
 ```kotlin
 @Composabel
 private fun Greeting(name: String) {
-	Surface(color = MaterialTheme.colorScheme.primary) {
-		Text (text = "Hello $name!")
-	}
+    Surface(color = MaterialTheme.colorScheme.primary) {
+        Text (text = "Hello $name!")
+    }
 }
 ```
 
@@ -92,7 +92,7 @@ Material 组件（例如 androidx.compose.material3.Surface）旨在提供应用
 
 例如，padding 修饰符会在其修饰的元素周围应用一定的空间。可以使用 Modifier.padding() 创建内边距修饰符。
 
-有数十种修饰符可用于实现对齐、添加动画、设置布局、使可点击或可滚动以及转换等效果。[C ompose 修饰符列表](https://developer.android.com/jetpack/compose/modifiers-list?hl=zh-cn)
+有数十种修饰符可用于实现对齐、添加动画、设置布局、使可点击或可滚动以及转换等效果。[Compose 修饰符列表](https://developer.android.com/jetpack/compose/modifiers-list?hl=zh-cn)
 
 ### 重复使用可组合项
 
@@ -255,8 +255,8 @@ import androidx.compose.runtime.remember
 
 @Composable
 fun Greeting() {
-	val expanded = remember { mutableStateOf(false) }
-	...
+    val expanded = remember { mutableStateOf(false) }
+    ...
 }
 ```
 
@@ -274,9 +274,9 @@ remember 可以起到保护作用，防止状态在重组时被重置。
 
 ```kotlin
 ElevatedButton(
-	onClick = {expanded.value = !expanded.value}
+    onClick = {expanded.value = !expanded.value}
 ) {
-	Text(if(expanded.value) "Show less" else "Show more")
+    Text(if(expanded.value) "Show less" else "Show more")
 }
 ```
 
@@ -285,24 +285,24 @@ ElevatedButton(
 ```kotlin
 @Composable
 private fun Greeting(name: String) {
-	val expanded = remember { mutableStateOf(false) }
-	
-	Surface(
-		color = MaterialTheme.colorScheme.primary,
-		modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
-	) {
-		Row(modifier = Modifier.padding(24.dp)) {
-			Column(modifier = Modifier.weight(1f)) {
-				Text(text = "Hello, ")
-				Text(text = name)
-			}
-			ElevatedButton(
-				onClick = { expanded.value = !expanded.value }
-			) {
-				Text(if (expanded.value) "Show less" else "Show more")
-			}
-		}
-	}
+    val expanded = remember { mutableStateOf(false) }
+
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+    ) {
+        Row(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Hello, ")
+                Text(text = name)
+            }
+            ElevatedButton(
+                onClick = { expanded.value = !expanded.value }
+            ) {
+                Text(if (expanded.value) "Show less" else "Show more")
+            }
+        }
+    }
 }
 ```
 
@@ -313,11 +313,11 @@ private fun Greeting(name: String) {
 ```kotlin
 @Composable
 private fun Greeting(name: String) {
-	val expanded = remember { mutableStateOf(false) }
-	
-	val extraPadding = if (expanded.value) 48.dp else 0.dp
-	
-	...
+    val expanded = remember { mutableStateOf(false) }
+
+    val extraPadding = if (expanded.value) 48.dp else 0.dp
+
+    ...
 }
 ```
 
@@ -328,29 +328,29 @@ private fun Greeting(name: String) {
 ```kotlin
 @Composable
 private fun Greeting(name: String) {
-	val expanded = remember { mutableStateOf(false) }
-	
-	val extraPadding = if (expanded.value) 48.dp else 0.dp
-	
-	Surface(
-		color = MaterialTheme.colorScheme.primary,
-		modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
-	){
-		Row(modifier = Modifier.padding(24.dp)) {
-			Column(modifier = Modifier
-												.weight(1f)
-												.padding(bottom = extraPadding)
-			){
-				Text(text = "Hello, ")
-				Text(text = name)
-			}
-			ElevatedButton(
-				onClick = { expanded.value = !expanded.value }
-			){
-				Text(if(expanded.value) "Show less" else "Show more")
-			}
-		}
-	}
+    val expanded = remember { mutableStateOf(false) }
+
+    val extraPadding = if (expanded.value) 48.dp else 0.dp
+
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
+    ){
+        Row(modifier = Modifier.padding(24.dp)) {
+            Column(modifier = Modifier
+                                                .weight(1f)
+                                                .padding(bottom = extraPadding)
+            ){
+                Text(text = "Hello, ")
+                Text(text = name)
+            }
+            ElevatedButton(
+                onClick = { expanded.value = !expanded.value }
+            ){
+                Text(if(expanded.value) "Show less" else "Show more")
+            }
+        }
+    }
 }
 ```
 
@@ -763,10 +763,10 @@ MaterialTheme 是一个可组合函数，体现了 [Material Design 规范](http
 import androidx.compose.ui.text.font.FontWeight
 // ...
 Text(
-	text = name,
-	style = MaterialTheme.typography.headlineMedium.copy(
-					fontWeight = FontWeight.ExtraBold				
-	)
+    text = name,
+    style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.ExtraBold                
+    )
 )
 ```
 
@@ -811,10 +811,10 @@ val Chartreuse = Color(0xFFEFF7CF)
 
 ```kotlin
 private val LightColorScheme = lightColorScheme(
-	surface = Blue,
-	onSurface = Color.White,
-	primary = LightBlue,
-	onPrimary = Navy
+    surface = Blue,
+    onSurface = Color.White,
+    primary = LightBlue,
+    onPrimary = Navy
 )
 ```
 
@@ -1129,8 +1129,6 @@ fun MyAppPreview() {
     }
 }
 ```
-
-
 
 ## 参考文章
 
