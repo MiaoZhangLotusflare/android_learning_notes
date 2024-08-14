@@ -1,18 +1,11 @@
-# Kotlin 
+# Kotlin
 
 * [动脑学院 kotlin 学习笔记]
 * [Kotlin 之 String]
 * [kotlin 协程]
 * [利用 Kotlin 特点]
 * [Kotlin 之 let、with、run、apply、also 函数的使用]
-
-
-
-
-
-
-
-
+* [Kotlin Flow 的 collect 和 collectLatest 有什么区别]
 
 ## 资料收集
 
