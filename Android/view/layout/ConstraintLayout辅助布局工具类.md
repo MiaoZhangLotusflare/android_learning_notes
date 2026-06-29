@@ -5,24 +5,45 @@
 > **辅助布局工具类**
 > 
 > 1. GuideLine
-> 
-> 参考线，帮助定位
+>    
+>    参考线，帮助定位
 > 
 > 2. Barrier
-> 
-> 屏障，将 a和 b 控件组合（a和b横向排列），设置 c 显示在 a 和 b 的右边。
+>    
+>    屏障，将 a和 b 控件组合（a和b横向排列），设置 c 显示在 a 和 b 的右边。
 > 
 > 3. Group
-> 
-> 组，控制组内控件同时显示或隐藏。
+>    
+>    组，控制组内控件同时显示或隐藏。
 > 
 > 4. Placeholder
+>    
+>    占位符，在布局中占好位置，通过app:content="" 或 setContent() 来让某个控件移动到该占位符。
 > 
 > 5. Flow
+>    
+>    Flow 流式布局组件，批量管理多个 view，实现自动换行/换列的标签流，多行多列排版。
+>    Flow 是虚拟布局，不会将视图添加到视图层次结构中，仅仅引用其他视图来辅助它们在布局系统中完成各自的布局功能，
+>    **app:flow_wrapMode** 设置排列方式：
+>    
+>    * none：默认值，所有引用的 view 形成一条链，水平局中，超出屏幕两侧的 view 不可见
+>    
+>    * chian：所引用的 view 形成一条链，超出部分会自动换行，同行的 view 会评分宽度
+>    
+>    * aligned：所引用的 view 形成一条链，但 view 会在同行同列。
+>    
+>    当 flow_wrap 属性为 aligned 或 chain 时，通过 **flow_maxElementsWrap** 属性控制每行最大的子 view 数量。
+>    
+>    **app: flow_verticalAlign** 设置对齐约束，top 顶对齐，bottom 底对齐，center 中心对齐，baseline 基线对齐
+>    **app:flow_horizantalAlign** 设置对齐约束，start 开始对齐，end 结束对齐，center 中心对齐
 > 
 > 6. Layer
+>    
+>    Layer 是一个约束助手，常用来增加背景或共同动画，Layer 在布局期间会调整大小，其大小会根据其引用的所有视图进行调整。
 
 ConstraintLayout 为了解决嵌套问题还提供了一系列的辅助控件帮助开发者布局，这些工具十分的方便，在日常开发工作中也是使用的非常频繁。
+
+这类工具主要用于辅助布局，自身通常不可见。虽然是随 ConstraintLayout 库一起提供的，但技术上可以被任何 ViewGroup 使用。
 
 ### 1. Guideline（参考线）
 
@@ -274,7 +295,9 @@ Placeholder 的作用就是占位，它可以在布局中占好位置，通过 a
 
 ### 5. Flow(流式虚拟布局)
 
-Flow 是用于构建链的新虚拟布局，当链用完时可以缠绕到下一行甚至屏幕的另一部分。当在一个链中布置多个项目时，这很有用，但是不确定容器在运行时的大小。可以使用它来根据应用程序中的动态尺寸（例如旋转时的屏幕宽度）构建布局。Flow 是一种虚拟布局。在 ConstraintLayout 中，虚拟布局（Virtual layouts）作为 virtual view group 的角色参与约束和布局中，但是它们并不会作为视图添加到视图层次结构中，而是仅仅引用其他视图来辅助它们在布局系统中完成各自的布局功能。
+Flow 是新增的虚拟辅助布局（VirtualLayout/ConstraintHelper），官方流式布局组件，用来批量管理多个 View，实现自动换行 / 换列的标签流、多行多列排版。可以使用它来根据应用程序中的动态尺寸（例如旋转时的屏幕宽度）构建布局。
+
+Flow 是一种虚拟布局。在 ConstraintLayout 中，虚拟布局（Virtual layouts）作为 virtual view group 的角色参与约束和布局中，但是它们并不会作为视图添加到视图层次结构中，而是仅仅引用其他视图来辅助它们在布局系统中完成各自的布局功能。
 
 下面使用动画来展示 Flow 创建多个链将布局元素充裕地填充一整行：
 
