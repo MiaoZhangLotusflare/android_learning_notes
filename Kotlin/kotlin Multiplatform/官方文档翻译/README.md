@@ -34,7 +34,7 @@
     
     * Resources overview - 完成
     
-    * Setup and configuration
+    * Setup and configuration - 完成
     
     * Access and usage
     

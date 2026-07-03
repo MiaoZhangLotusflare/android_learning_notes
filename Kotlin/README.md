@@ -2,10 +2,23 @@
 
 * [动脑学院 kotlin 学习笔记]
 * [Kotlin 之 String]
-* [kotlin 协程]
+* 协程
+  - [Kotlin 协程概念]
+  - Kotlin 协程的使用
+  - Kotlin 协程与 Flow
+  - Kotlin 协程实现
+  - [Kotlin 协程疑问]
 * [利用 Kotlin 特点]
 * [Kotlin 之 let、with、run、apply、also 函数的使用]
 * [Kotlin Flow 的 collect 和 collectLatest 有什么区别]
+* [Kotlin Multiplatform]
+  - Koin
+  - 官方文档翻译
+    - [Supported platform]
+    - [Platform differences]
+    - [Resources overview]
+    - [Setup and configuration]
+    - Access and usage
 
 ## 资料收集
 
