@@ -29,8 +29,14 @@
 >    主要用途有：模块化布局、运行时动态换位
 >    
 >    Placeholder 只能在 ConstraintLayout 中使用。
+> 
+> 5. Layer
+>    
+>    Layer 是一个变换型 Helper：把一组 View 当成虚拟图层，对它们整体做旋转、平移、缩放，但不负责排版，也不增加 View 层级。
+>    
+>    典型场景：卡片整体反转、图标+标题一起弹出、一组控件统一 elevation/背景、MotionLayout 里整体位移。
 
-## 一、Helper
+## Helper 辅助对象
 
 ConstraintLayout 的 Helper 是一类辅助布局的特殊 View：运行时通常不可见（或仅设计时可见），用来管理、排列或动画一组子 View。它们都只能在 ConstraintLayout（或子类 MotionLayout）里使用。
 
@@ -602,6 +608,148 @@ previewSlot.setContentId(thumb2.id) // 再触发换位
 | 点击后把某个 View 移到预览区 | Placeholder+TransitionManager          |
 | 整夜布局大改（如详情页展开）    | ConstraintSet 加载两套约束+TransitionManager |
 | 精细关键帧动画           | MotionLayout                           |
+
+### 5 .Layer（层布局）
+
+Layer 是 ConstraintLayour 2.0 的变换型 Helper：把一组 View 当成虚拟图层，对它们整体做旋转、平移、缩放，但不负责排版，也不增加 View 层级。
+
+以前要对【图片+文字】一起旋转/缩放，通常会再包一层 FrameLayout/LinearLayout，再对容器做动画。代价是：
+
+- 多一层 View 层级
+
+- 内部 View 很难再和外面的兄弟 View 互相约束
+
+Layer 的做法：子 View 仍是 ConstraintLayout 的直接子节点，各自约束照旧；用 constraint_referenced_ids 声明【哪些算同一层】，之后对 Layer 做 rotation/translation/scale 即可。
+
+典型场景：卡片整体反转、图标+标题一起弹出、一组控件统一 elevation/背景、MotionLayout 里整体位移。
+
+Layer 继承自 ConstraintHelper，是一个约束助手，相对于 Flow 来说，Layer 的使用较为简单，常用来增加背景，或者共同动画。
+
+**使用注意：**
+
+1. 只能放在 ConstraintLayout（或 MotionLayout）里，和其他 Helper 一样。
+
+2. constraint_referenced_ids 只能写真实控件 id，不要写 Group/Barrier/Flow/Layer 自己的 id。
+
+3. 应用的 id 必须存在，写错 id 会走到 Resources.getIdentifier()，严重时布局 inflate 会很慢甚至 ANR。
+
+4. Layer 的 visibility 会覆盖被引用 View 的可见性。只想做动画、不想管显隐时，保持 Layer 为 VISIBLE，用 Group 单独管显隐。
+
+5. 子 View 的约束仍然生效，Layer 不会替代 Chain/Barrier 去对齐。
+
+**和 Group 的区别**
+
+Group 只管显隐，Layer 管整组变换。两者都是 Helper，都不增加 View 层级，都用 constraint_referenced_ids 引用一组控件。
+
+Group 布局结束后宽高会被收成 0，自己不可见、不占位。
+
+Layer 会按引用 View 算出一个包围盒，所以能画背景、做整体动画。
+
+1. Layer 也能改 visibility。它继承了 ConstraintHelper 的显隐同步。只做动画，让 Layer 保持 VISIBLE，显隐交给 Group，避免两套互相覆盖。
+
+2. 不要用 Group 当容器做动画。它没有包围盒，变换不会作用到子 View。
+
+3. 两者都可以应用同一批 View，但显隐以最后一次 applyLayoutFeatures 为准，不要混着用两套 visibility。
+
+4. constraint_references_ids 只能写真实控件 id，不要写另一个 Group/Layer/Barrier/Flow 的 id。
+
+图层（Layer）在布局期间会调整大小，其大小会根据其引用的所有视图进行调整，代码的先后顺序也会决定着它的位置，如果代码在所有引用 view 最后面，那么它就会在所有 view 的最上面，反之则是最下面，在最上面的时候如果添加背景，就会把引用的 view 覆盖掉，下面展示下添加背景的例子
+
+![](https://mmbiz.qpic.cn/mmbiz_png/v1LbPPWiaSt6Sf5UJpuDjpG03kD1YHMT1BKNg2Vx0wyuausu9MKB7ctKOPwtJOQRKFRMEzsZ4w1Qy5EzEx5Ek5Q/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DAF3FE"
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText">
+
+    <androidx.constraintlayout.helper.widget.Layer
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/common_rect_white_100_10"
+        android:padding="10dp"
+        app:constraint_referenced_ids="AndroidImg,NameTv" />
+
+    <ImageView
+        android:id="@+id/AndroidImg"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/android"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/NameTv"
+        android:layout_width="100dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="Android"
+        android:textColor="@color/black"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@id/AndroidImg"
+        app:layout_constraintStart_toStartOf="@id/AndroidImg"
+        app:layout_constraintTop_toBottomOf="@id/AndroidImg" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+可以看到，当 Layer 的代码在所有引用 view 的上面时，效果是正常的，因为此时所有的 view 都在 Layer 的上面，下面来看一下 Layer 代码在最后面时的情况：
+
+![](https://mmbiz.qpic.cn/mmbiz_png/v1LbPPWiaSt6Sf5UJpuDjpG03kD1YHMT1r78qBej2MFueyJh51A42Bryb5WzJbSw4g6IGYeGw0WmXceYc0ib3jkA/640?wx_fmt=png&wxfrom=5&wx_lazy=1&wx_co=1)
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#DAF3FE"
+    tools:context=".MainActivity"
+    tools:ignore="HardcodedText">
+
+    <ImageView
+        android:id="@+id/AndroidImg"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:src="@drawable/android"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/NameTv"
+        android:layout_width="100dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="Android"
+        android:textColor="@color/black"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="@id/AndroidImg"
+        app:layout_constraintStart_toStartOf="@id/AndroidImg"
+        app:layout_constraintTop_toBottomOf="@id/AndroidImg" />
+
+    <androidx.constraintlayout.helper.widget.Layer
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/common_rect_white_100_10"
+        android:padding="10dp"
+        app:constraint_referenced_ids="AndroidImg,NameTv" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+可以看到，此时 Layer 已经把所有的 view 覆盖住了。
 
 # 参考文章
 

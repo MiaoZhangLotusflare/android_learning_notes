@@ -54,7 +54,7 @@
       * [RecyclerView 的复用机制](https://github.com/ZhangMiao147/android_learning_notes/blob/master/Android/view/%E5%88%97%E8%A1%A8/RecyclerView/RecyclewView%E5%A4%8D%E7%94%A8%E6%9C%BA%E5%88%B6.md)
       * [RecyclerView 动画源码浅析](https://github.com/ZhangMiao147/android_learning_notes/blob/master/Android/view/%E5%88%97%E8%A1%A8/RecyclerView/RecyclewView%E5%8A%A8%E7%94%BB%E6%BA%90%E7%A0%81%E6%B5%85%E6%9E%90.md)
       * [Recycler 原理分析](https://github.com/ZhangMiao147/android_learning_notes/blob/master/Android/view/%E5%88%97%E8%A1%A8/RecyclerView/RecyclewView%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90.md)
-  * ListView 与 RecyclerVide 的区别
+  * ListView 与 RecyclerView 的区别
 
 * View
   

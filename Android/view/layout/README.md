@@ -60,31 +60,31 @@ ConstraintLayout 优势：
 
 Helper 是 ConstraintLayout 里的特殊 View：通常不可见，用来辅助布局或控制一组 View。
 
+它们都只能在 ConstraintLayout（或子类 MotionLayout）里使用。
+
 - Guideline 参考线
   
   Guideline 是一条参考线，可以帮助开发者进行辅助定位，不会真正显示在布局中。
-  
-  Guideline 只能在 ConstraintLayout 中使用。
 
 - Barrier 屏障
   
   Barrier 是形成一个屏障、障碍。控制 Barrier 在一些 view 的给定位置（top|bottom|left|right|start|end），然后其他 view 可以根据 Barrier 的位置进行约束。
-  
-  Barrier 只能在 ConstraintLayout 中使用。
 
 - Group
   
   Group 的作用就是可以对一组控件同时隐藏或显示。
-  
-  Group 只能在 ConstraintLayout 中使用。
 
 - Placeholder
   
   Placeholder 的作用就是占位，可以在布局中占好位置，通过 app:content="" 属性（或 setContent() 设置内容），来让某个空间移动到此占位符中。
   
-  主要用途有：模块化布局、运行时动态换位
+  主要用途有：模块化布局、运行时动态换位。
+
+- Layer
   
-  Placeholder 只能在 ConstraintLayout 中使用。
+  Layer 是一个变换型 Helper：把一组 View 当成虚拟图层，对它们整体做旋转、平移、缩放，但不负责排版，也不增加 View 层级。
+  
+  典型场景：卡片整体反转、图标+标题一起弹出、一组控件统一 elevation/背景、MotionLayout 里整体位移。
 
 ## [ConstraintLayout VirtualLayout Helper]
 
@@ -116,27 +116,21 @@ Helper 是 ConstraintLayout 里的特殊 View：通常不可见，用来辅助�
   CircularFlow 把一组 View 绕中心 View 排成圆形/环形。
   典型场景：运行菜单/FAB 展开菜单、轮播图周围指示器、头像周围一圈 icon、配合 MotionLayout 做旋转轮播。
 
-## ConstraintLayout 其他 Helper
-
-* Layer
-
-* 需在 MotionLayout 中使用
-  
-  * Carousel
-  
-  * MotionEffect
-  
-  * MotionPlaceholder
-
 ## ConstraintLayout 功能增强组件
 
 在基础 Helper 之上，扩展复杂布局、动画、多状态能力。
 
-* Flow/Grid/CircularFlow
-
-* Layer
-
 * MotionLayout
+  
+  MotionLayout 是 ConstraintLayout 2.0 的布局容器，ConstraintLayout 的子类，用来在多个约束状态之间做过渡动画。
+  
+  * MotionLayout 专用 Helper
+    
+    - Carousel
+    
+    - MotionEffect
+    
+    - MotionPlaceholder
 
 * ConstraintLayoutStates
 
