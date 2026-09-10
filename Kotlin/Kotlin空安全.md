@@ -1,5 +1,54 @@
 # Kotlin 空安全
 
+> Kotlin 每个类型都有一个明确的空状态：非空状态和可空状态，编译器在编译期强制检查：用 T/T? 规定哪里运行null，不合规的代码编不过，NPE 只会在特定场景出现（显式抛（故意抛出 NPE，或者调用了会抛它的函数）、unsafe 操作（用哪个不安全操作强行当非空!!）、Java 互调（null 从 Java 漏出来））。
+> 
+> * Kotlin 提供安全调用操作符 ?.
+> 
+> * 非空断言运算符 !!
+> 
+> * Elvis 操作符 ?:
+> 
+> * 智能转换：Kotlin 的编译期能够进行智能转换（smart cast），这意味着如果一个变量被检查过是否为 null，那么在检查之后，编译器会认为这个变量是非空的，直到它的值再次改变或者作用域结束。
+> 
+> * 空合并函数：除了 ?: 外，Kotlin 还支持 let、apply、run、with 和 also 等范围函数，这些函数在处理可空类型时非常有用。
+> 
+> * 空检查与类型断言：类型断言 as 和安全类型断言 as? 在处理可能为 null 的对象时非常有用。
+> 
+> Kotlin 不是绝对的空指针安全，比如 Kotlin 调用 Java 代码，Null 安全性被破坏了。
+> 
+> 平台类型：Java 返回的值在 Kotlin 中显示为 String!，既不是 String 也不是 String?，需要手动处理。
+> 
+> * Java 补上 @Nullable 或 @NotNull，平台类型就会消失。
+> 
+> * Java 基本类型（byte、short、int、long、float、double、char、boolean 8个，不能为 null）是普通非空 Kotlin 类型，不是 T!.
+> 
+> * Java 包装类型（Byte、Short、Integer、Long、Float、Double、Character、Boolean）（可以为 null） ，才是平台类型。
+> 
+> * 自定义类型和 String 规则相同，都是引用。
+> 
+> 非空断言什么时候用：
+> 
+> **能证明这里不是 null，并且空了就该立刻崩，而不是继续跑。**
+> 
+> - 编译器看出去，但刚保证过非空
+> - Java/系统 API 标成可空，契约却保证有值，比如 findViewById（现在更常见用 ViewBinding）
+> - 测试代码
+> - 非空状态必须立刻炸
+> 
+> 更推荐使用 requireNotNull 和 checkNotNull:
+> 
+> - requireNotNull：为空则抛出 IllegalArgumentException 异常，用在函数入口、校验参数。
+> - checkNotNull：为空抛出 IllegalStateException 异常，用在业务做到一半，内部状态该有却没有。
+> - require 和 check 类似，不脱检查的是布尔条件。
+> 
+> Kotlin 中对空安全背后的处理套路如下：
+> 
+> 1. 非空类型的属性编译器添加 @NotNull 注解，可空类型添加 @Nullable 注解。
+> 2. 非空类型直接对参数进行判空，如果为空直接抛出异常。
+> 3. 可空类型，如果是 ?. 判空，不空才执行后续代码，否则返回 null；如果是 !!，空的话直接抛出NPE 异常。
+> 4. as 操作符会判空，空的话直接抛出异常，不为空才执行后续操作，没做类型判断运行时可能会报错。
+> 5. as? 实际上就是 instanceof + 原引用或 null，这里有一点注意：as? 处理后的类型可能为空，所有调用 as? 转换后的对象还需要添加安全调用操作符 ?.
+
 ## 空安全的重要性
 
 在 Java 或 C++ 等传统语言中，空指针异常是由于尝试访问为初始化的对象或已释放的对象所引起的。这种异常不仅会导致程序崩溃，还可能引入难以调试的问题。为了避免这类错误，Kotlin 引入了一套完整的空安全系统，使得开发者能够更清晰地表达意图，并减少运行时错误的发生几率。

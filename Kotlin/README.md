@@ -22,6 +22,55 @@
 
 ## [Kotlin 空安全]
 
+Kotlin 每个类型都有一个明确的空状态：非空状态和可空状态，编译器在编译期强制检查：用 T/T? 规定哪里运行null，不合规的代码编不过，NPE 只会在特定场景出现（显式抛（故意抛出 NPE，或者调用了会抛它的函数）、unsafe 操作（用哪个不安全操作强行当非空!!）、Java 互调（null 从 Java 漏出来））。
+
+- Kotlin 提供安全调用操作符 ?.
+
+- 非空断言运算符 !!
+
+- Elvis 操作符 ?:
+
+- 智能转换：Kotlin 的编译期能够进行智能转换（smart cast），这意味着如果一个变量被检查过是否为 null，那么在检查之后，编译器会认为这个变量是非空的，直到它的值再次改变或者作用域结束。
+
+- 空合并函数：除了 ?: 外，Kotlin 还支持 let、apply、run、with 和 also 等范围函数，这些函数在处理可空类型时非常有用。
+
+- 空检查与类型断言：类型断言 as 和安全类型断言 as? 在处理可能为 null 的对象时非常有用。
+
+Kotlin 不是绝对的空指针安全，比如 Kotlin 调用 Java 代码，Null 安全性被破坏了。
+
+平台类型：Java 返回的值在 Kotlin 中显示为 String!，既不是 String 也不是 String?，需要手动处理。
+
+- Java 补上 @Nullable 或 @NotNull，平台类型就会消失。
+
+- Java 基本类型（byte、short、int、long、float、double、char、boolean 8个，不能为 null）是普通非空 Kotlin 类型，不是 T!.
+
+- Java 包装类型（Byte、Short、Integer、Long、Float、Double、Character、Boolean）（可以为 null） ，才是平台类型。
+
+- 自定义类型和 String 规则相同，都是引用。
+
+非空断言什么时候用：
+
+**能证明这里不是 null，并且空了就该立刻崩，而不是继续跑。**
+
+- 编译器看出去，但刚保证过非空
+- Java/系统 API 标成可空，契约却保证有值，比如 findViewById（现在更常见用 ViewBinding）
+- 测试代码
+- 非空状态必须立刻炸
+
+更推荐使用 requireNotNull 和 checkNotNull:
+
+- requireNotNull：为空则抛出 IllegalArgumentException 异常，用在函数入口、校验参数。
+- checkNotNull：为空抛出 IllegalStateException 异常，用在业务做到一半，内部状态该有却没有。
+- require 和 check 类似，不脱检查的是布尔条件。
+
+Kotlin 中对空安全背后的处理套路如下：
+
+1. 非空类型的属性编译器添加 @NotNull 注解，可空类型添加 @Nullable 注解。
+2. 非空类型直接对参数进行判空，如果为空直接抛出异常。
+3. 可空类型，如果是 ?. 判空，不空才执行后续代码，否则返回 null；如果是 !!，空的话直接抛出NPE 异常。
+4. as 操作符会判空，空的话直接抛出异常，不为空才执行后续操作，没做类型判断运行时可能会报错。
+5. as? 实际上就是 instanceof + 原引用或 null，这里有一点注意：as? 处理后的类型可能为空，所有调用 as? 转换后的对象还需要添加安全调用操作符 ?.
+
 ## [Kotlin 编译流程]
 
 #### 1. 词法分析：切成 token，编译器从左到右扫描源码，切成最小有意义的碎片。
@@ -123,6 +172,58 @@ Android: .class -> D8/R8 转成 .dex -> 打进 APK/AAB
 #### 9. 执行 main：真正的运行时
 
 开始真正的运行代码，kotlin-stdlib 也在这时被加载；空安全失败抛出的 NullPointerException，也是编译器插入的运行时检查。
+
+## [Kotlin 之 data class]
+
+Data class 在编译时会自动生成 equals（）、hashCode()、toString()、copy（） 以及一组 componentN() 方法。
+
+* hashCode（）、equals() 是用来比较对象内容是否相同，多用于 HashMap 等容器中。
+
+* toString() 是用来打印对象内容。
+
+* copy() 实现了复制功能，浅拷贝，原理：在 copy 方法里面 new 一个新实例，浅拷贝所有属性。
+
+* componentN() 提供了快速访问元素的功能。
+
+data class 的功能 class 都能实现，data class 只是 Kotlin 提供的具有常用数据 model 功能的类，用来提升开发效率。
+
+非常适合用作数据传输对象、API 响应模型或配置实体等场景。
+
+data class 必须在主构造函数中定义至少一个 val 或 var 属性，否则编译器会报错。
+
+data class 不能继承其他类，只能实现接口，这是为了保证自动生成的方法行为一致且不会被父类干扰。
+
+data class 也不能是 abstract、open、sealed 或 inner。这些限制确保数据类的结构固定、行为可预测。
+
+在 Kotlin 1.5+，数据类可以结合 sealed 使用，实现有限集合的数据子类。
+
+这样设计保证数据类主要专注于存储和传递数据，而不承担复杂继承或业务逻辑，从而保持简洁和安全。
+
+inner：内部类，Kotlin 里默认写在类里面的类拿不到外层的 this。加上 inner 才是内部类，每个实例都绑着一个外层对象。（inner 持有外层引用，注意内存泄漏，能不用就不用）。
+
+data class 中的普通变量和普通 class 的普通变量是相同的含义：不参与到 equals、hashCode、copy、toString、componentN 中。
+
+在 ViewModel 中使用 Kotlin 的 data class 来定义 UI 状态（UI State）是现代 Android 开发（特别是 Jetpack Compose）中的标准最佳实践。
+
+页面手机 state，每次 _state.value = ...copy(...) 都是新的 state，Compose/订阅方发现对象换了，按新数据刷新。
+
+ViewModel 用一个只读的 data class 表示当前界面；每次变化都 copy 出新状态再发出去，而不是改旧对象上的字段。这样更新可追踪，Compose/StateFlow 也才能可靠刷新。（copy() 方法中对象属性值没有变化的话，equals 会是 true，那就不会触发更新，所以需要注意 list、map、array、StringBuilder、Date、Calendar、有 var、MutableMap、HashMap、MutableSet、MutableList、嵌套对象包含这些类型的属性，如果有这些，copy 之后，equals 方法返回 true，也不会触发刷新。）
+
+data class 为什么适合，因为它会生成：
+
+- copy：只改一部分字段，做出新状态（精髓，copy 之所以是精髓，是因为它让不改旧的，只产新的写起来很轻）
+- equals：StateFlow/Compose 用来判断【要不要刷新】
+- toString：打日志能看到整份状态
+
+日常开发使用 data class 的地方：
+
+- ViewModel 状态使用 data class + copy 轻松实现不可变更新（数据对象创建后不改内部，变化用 copy 得到新对象，copy 之所以是精髓，是因为它让不改旧的，只产新的写起来很轻）。
+- Rom 数据库 Entity(表示一张表，属性对应列)使用 data class，自动实现 toString，方便日志。测试、去重、和内存里另一份对比时，常靠 equals 方法。update 变更数据时可以使用 copy 方法。
+- Retrofit DTO(Data Transfer Object，专门对接接口的数据盒子，字段名、解构跟着 JSON/后段走，常加 Gson/Moshi 的 @SerializaedName) 转 Entity(对象)：意思是接口返回的 JSON 先收成一套【网络用的对象】，再翻译成数据库（或业务）用的另一套对象。这里的 DTO 和 Entity 都是使用的 data class。
+
+数据类通过自动生成常用方法，大幅减少了样板代码，让开发者可以专注于数据本身。它适用于存储和传递数据，而非承载复杂业务逻辑。借助 copy()、解构声明以及自动生成的 equals（）、hashCode()、toString()，数据类让对象的比较、复制、打印和解构操作变得直观而高效。
+
+合理使用数据类，保持构造函数简洁、属性直观且尽量不可变，不仅可以减少重复代码，还能提升可读性和维护性，使 Kotlin 开发体验更加简洁优雅。
 
 ## 资料收集
 
