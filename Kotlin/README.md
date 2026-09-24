@@ -225,6 +225,67 @@ data class 为什么适合，因为它会生成：
 
 合理使用数据类，保持构造函数简洁、属性直观且尽量不可变，不仅可以减少重复代码，还能提升可读性和维护性，使 Kotlin 开发体验更加简洁优雅。
 
+## [Kotlin 相等比较]
+
+Kotlin 中 == 比较的是数值是否相等，而 === 比较的是两个对象的地址是否相等。
+
+对基本类型, 对基本类型 === 和 == 生成同一套指令，都是比数值。
+
+- 非空 Int：是值，没有对象，没有地址，=== 只能比大小。
+- 可空 Int？：是对象，有地址，=== 比是不是同一个实例；-128~127 才可能装上 IntegerCache。
+
+在 Java 平台上，数值被 JVM 虚拟机以字节码的方式物理存储的，除非需要做可空标识（比如说 Int？)或者涉及范型。在后者中数值是装箱的。
+
+```kotlin
+val a: Int = 999 // a 就是个数值，不是个对象，不涉及装箱的问题。
+val b: Int? = a // b 是个对象，涉及装箱问题
+val c: Int? = a
+println(b == c) // true
+println(b === c) // false
+
+val d: Int = a
+val e: Int = a
+println(d == e) // true
+println(d === e) // true
+
+val f: Int? = 999
+val g: Int? = f
+val h: Int? = f
+println(g == h) // true
+println(g === h) // true
+```
+
+Integer、Long 等包装类型会有缓存，如果Int a 数值是在 -128 到 127 之间，数值是不会重新包装成新对象，而是使用 IntegerCache 里缓存的数据。那么 b===c 也是 true。
+
+会缓存的类型有：Byte、Short、Int、Long、Char、Boolean。
+
+字符串走的是字符串常量池+intern：
+
+1. 源码里的字面量 “hello”，编译进 class 的常量池。
+2. 类加载时，JVM 保证池里只有一份 "hello"。
+3. 所有写 “hello”的地方，都拿到同一个 String 对象。
+
+intern() 是把这个字符串换成常量池里的那一份。字面量已经换过了；new 出来的默认不换。它只影响是不是同一个对象（===），不影响内容是否相等（==）。
+
+- 与 Java 的差异
+  - 判断值相等，使用 equals()
+  - 判断地址相等，使用 ==
+
+Kotlin 里面的对象、String 的 == 会调用 equals() 方法。
+
+data class 会生成 equals()，所以 == 比的是主构造属性，不是地址。
+
+自己写的类如果没有重写 equals()，继承的是 Any.equals()，那就是比引用，这时 == 和 ===结果一样。如果某个类有比较属性是否相等的需求，需要自行覆盖 equals() 方法。
+
+基本类型的 == 不会调用 equals() 方法，可空类型会装箱，才走包装类型的 equals()。
+
+Kotlin 的 == 和 === 有一定的类型判断能力。Kotlin 编译期会检查操作符两边对象的类型，如果发现两边数据不存在相等的可能时，会直接出现编译错误。
+
+满足下面两点之一，Kotlin 编译期才不会出现编译错误：
+
+- 两边对象类型相同
+- 左右对象存在父子关系（继承或实现）
+
 ## 资料收集
 
 1. [Android：这是一份全面 & 详细的Kotlin入门学习指南](https://juejin.im/entry/5d36609ff265da1b88121bc3)
