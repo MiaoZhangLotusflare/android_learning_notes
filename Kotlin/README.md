@@ -314,7 +314,57 @@ const val 的值会在编译期间被直接复制到调用方的字节码中，�
 - 如果是固定的配置项、全局变量、URL 或数值边界（且类型是基本类型或字符串），优先使用 const val 以获得更好的性能。
 - 其他绝大多数只需要只读、不可修改的普通属性、局部变量或对象实例，统一使用 val。
 
+## [Kotlin lateinit 与 by lazy]
 
+在 kotlin 中，lateinit 和 by lazy 都是用于延迟初始化。
+
+**lateinit**
+
+lateinit 只能用于 var（可变类型），手动选择在未来的某个时间点进行初始化。只能是非空对象（不能是基本数据类型），不保证线程安全。
+
+lateinit 属性不能写自定义 getter/setter 方法，如果写，编译期直接报错，代码不会通过编译。
+
+常见场景：依赖注入（如 Dagger/Hilt）、Android 的 onCreate 生命周期回调中初始化 View。
+
+lateinit 实现是通过对 get 和 set 方法做了一些操作，get 方法中会判断值是否为 null，如果为 null 就抛出异常。
+
+lateinit 本质：给非空的 var 留一个可以先不赋值的字段，字段用 null 表示还没初始化。
+
+lateinit 不能修饰基本类型。原因是因为基本类型有默认值，无法判断是否还没初始化。
+
+**by lazy**
+
+by lazy 只能用于 val（只读变量），在变量第一次被使用时自动执行初始化逻辑，并且默认是线程安全的。支持任意类型（包括基本数据类型和可空类型）。
+
+by lazy 是一个属性委托。它包含一段初始化 lambda 表达式。只有当代码中第一次读取该字段是，该段表达式才会执行，并将结果缓存起来，后续读取直接返回保存值。
+
+常见场景：创建开销较大的对象（比如数据库连接、复杂的计算结果、大型数据集合），或者只有特定条件下才会用到的变量。
+
+by：kotlin 的委托属性，就是这个变量的 get、set 都是委托给了另外一个类去操作。如果是 var 变量，必须要有 setValue 和 getValue 两个方法，val 变量不需要 setValue 方法。
+
+lazy：一个 kotlin 的函数。实现使用 synchroinzed 来保证线程安全，如果值已经存在则返回，如果值不存在则创建并保存。
+
+现在可以使用注入框架（Hilt）可以 @Inject lateinit var，减少自己管理对象怎么创建、写在哪。
+
+**选择：**
+
+- 如果希望这个变量是不可变的（只读） -> 选择 by lazy
+- 如果初始化的控制权在外部（例如生命周期回调、依赖注入框架） -> 选择 lateinit var。
+- 如果需要延迟初始化基本数据类型 -> 必须选择 by lazy。
+
+从本质上来说，lateinit 和 by lazy 的区别是体现在内存上：
+
+lateinit 修饰的属性，会在内存中创建，只不过没有赋值。
+
+by lazy 修饰的属性，只有在使用的时候才会在内存中创建。
+
+**get/set、getter/setter 与 getValue/setValue**
+
+get/set：属性上写的访问器，写在属性声明后面，用来规定这个属性被读取、被赋值时做什么。
+
+getter/setter：getter 就是 get，setter 就是 set。get/set 是 kotlin 源码里的写法，getter/setter 是编译后的 getxxx/setxx 方法。
+
+getValue/setValue：委托对象上的运行符。用在 by 后面的那个对象上，属性自己的 getter/setter 仍会生成，方法体改成去调用委托。
 
 ## 资料收集
 

@@ -300,4 +300,18 @@ const val 的值会在编译期间被直接复制到调用方的字节码中，�
 
 ## lateinit vs by lazy ：我到底该用哪个？
 
+lateinit 用于延迟初始化，只能用于 var(可变类型)，只能是非空对象，不能是基本数据类型，不保证线程安全，不能自定义 getter/setter 方法，如果写，编译期直接报错，代码不会通过编译。访问未初始化的 lateinit 变量会抛出 UninitializedPropertyAccessException。常见场景有依赖注入、Android 的 onCreate 生命周期回调中初始化 View。
+
+lateinit 本质：给非空的 var 留一个可以先不赋值的字段，字段用 null 表示还没初始化。get 方法中会判断是否为 null，如果为 null 就抛出异常。
+
+现在可以使用注入框架（Hilt）可以 @Inject lateinit var，减少自己管理对象怎么创建、写在哪。
+
+by lazy 也是用于延迟初始化，by 是 kotlin 的委托属性，lazy 是 kotlin 的一个函数。只能用于 val （只读变量），在变量第一次被使用时自动执行初始化逻辑，并将结果缓存起来，后续读取直接返回保存值，并且默认是线程安全的，用  synchroinzed 来保证线程安全。支持任意类型。
+
+lateinit 和 by lazy 的区别主要是在内存上，lateinit 修饰的属性，会在内存中创建，只不过没有赋值。而 by lazy 修饰的属性，只有在使用的时候才会在内存中创建。
+
+如果希望这个变量是不可变的（只读）或者需要延迟初始化基本数据类型，则选择使用 by lazy，如果初始化的控制权在外部（例如生命周期回调、依赖注入框架）则选择使用 lateinit var。
+
+* <mark>kotlin 委托</mark>：[kotlin 委托 | 菜鸟教程](https://www.runoob.com/kotlin/kotlin-delegated.html)
+
 ## kotlin when vs Java switch
