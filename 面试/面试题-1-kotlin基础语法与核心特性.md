@@ -315,3 +315,56 @@ lateinit 和 by lazy 的区别主要是在内存上，lateinit 修饰的属性�
 * <mark>kotlin 委托</mark>：[kotlin 委托 | 菜鸟教程](https://www.runoob.com/kotlin/kotlin-delegated.html)
 
 ## kotlin when vs Java switch
+
+<mark>kotlin sealed class/interface</mark>
+
+<mark>vararg</mark>
+
+Java Switch 与 kotlin when 都是处理多分支条件判断的常用工具。但是 kotlin 中是不支持 switch 的。
+
+Kotlin 的 when 相比较 switch：
+
+1. 语法更简洁：无 case、break
+
+2. 匹配能力更强：支持单值、多值、范围、类型、无参数匹配
+
+3. 更安全：无穿透风险
+
+4. 还支持智能类型转换：is 匹配后自动转类型
+
+5. when 是表达式，可以直接赋值给变量或作为函数返回值，进一步简化代码
+
+6. 可简化 if-else 多层嵌套，消除嵌套缩进，提升代码可读性
+
+7. 对于 sealed class、enum、boolean 类型，编译器可以检查是否穷举了所有可能，可以不加 else，漏掉任何一项仍然会报错。
+
+无参数 when 的分支按照“异常场景->普通场景->默认场景”排序，符合日常逻辑习惯，便于理解。（UI中观察 statu 然后根据状态显示页面的代码就是这样的）。
+
+- when 与 if-else 链是什么区别？
+1. when 支持值/多值/区间/类型/集合多形态匹配，if 只能写布尔条件
+2. when 对于 menu、sealed class、boolean 有穷举性检查，if 没有
+
+什么时候用 if?如果条件之间有复杂逻辑组合，if 反而更清楚。
+
+- when 的集合成员匹配是 o(n) 还是 o(1)？
+
+取决于集合自己，集合匹配走的是 contains，hashset 就是 o(1)，treeset 就是 o(log n), array/list 就是 o(n)。如果是常量，编译器可以编译成 switch，不经过 contains。
+
+- sealed 的穷举性检查是怎么实现的？
+
+编译器做的是先列出这个 sealed 类型所有直接的非 sealed 子类型，再看 when 的分支有没有把他们都盖住。中间还套着 sealed 时，会先把那一层展开，缺任何一项又没有 else，就报错。从 Kotlin 1.7 起，当表达式和当语句用都做这个检查。
+
+普通类的子类可以写在任何地方，编译器列不出完整名单。当表达式用时必须有 else；当语句用时可以不写，没匹配上就什么都不做。
+
+- 使用中遇到过什么问题？
+
+案例一：网络状态用 sealed 建模，但 when 写了 else -> {}，新增一种 Timeout 状态后没补分支，页面卡在空白。修复为删掉 else，让编译器把遗漏点暴露出来。
+
+案例二：is 分支漏了 null，接口返回空值时走了“其他”分支，展示的是类型名而不是默认文案。
+
+- when 在 Android 上最常用的三个位置：
+  - 状态渲染 - 把 sealed 的 UiState 映射成界面动作（显示骨架屏/显示列表/显示错误），集中在一处便于审查。
+  - 错误码映射 - when(code) {in 500..599 -> "服务异常"...} 给用户可读文案，同时补日志。
+  - 多类型分支的差异化处理 - 比如分享渠道不同类型时用 is 分支分别处理。共同点是把“一堆 if 散在各处”收敛成一个可枚举的决策点，这本身就是价值。
+
+when 的收益不只是语法糖，而是把决策集中成一处可审查的结构。

@@ -19,6 +19,13 @@
     - [Resources overview]
     - [Setup and configuration]
     - Access and usage
+* 【Kotlin 空安全】
+* 【Kotlin 编译流程】
+* 【Kotlin 之 data class】
+* 【Kotlin 相等比较】
+* 【Kotlin const val 与 val】
+* 【Kotlin lateinit 与 by lazy】
+* 【Kotlin when】
 
 ## [Kotlin 空安全]
 
@@ -365,6 +372,61 @@ get/set：属性上写的访问器，写在属性声明后面，用来规定这�
 getter/setter：getter 就是 get，setter 就是 set。get/set 是 kotlin 源码里的写法，getter/setter 是编译后的 getxxx/setxx 方法。
 
 getValue/setValue：委托对象上的运行符。用在 by 后面的那个对象上，属性自己的 getter/setter 仍会生成，方法体改成去调用委托。
+
+## 【Kotlin when】
+
+Java Switch 与 kotlin when 都是处理多分支条件判断的常用工具。但是 kotlin 中是不支持 switch 的。
+
+而 Java Switch 有三个痛点：1. 语法繁琐，每个分支都需要写 case 关键字定义匹配条件，还要加 break 语句防止穿透。2. 穿透风险，这是 Switch 最容易踩的坑，一旦忘记写 case，程序就会从匹配到的分支开始，依次执行后续所有分支的代码，导致逻辑错误。3. 类型局限，Java 7 之前仅支持 byte、short、int、char 等基本类型，后续虽支持 String 和枚举，但仍无法匹配范围、类型判断等复杂场景。比如想判断一个数字是否在某个区间，或者判断一个对象的具体类型，switch 完全无能为力，智能转而使用繁琐的 if-else 嵌套。
+
+Kotlin 的 when 相比较 switch，语法更简洁（无 case、break）、匹配能力更强（支持单值、多值、范围、类型、无参数匹配）、更安全（无穿透风险）；相比 if-else，更适合多分支场景，可消除嵌套缩进。还支持智能类型转换（is 匹配后自动转类型）。
+
+1. 极致简洁，摈弃了 case 和 break 关键字，直接用匹配条件->执行逻辑的结果，多值匹配用逗号分隔即可，代码量大幅减少。
+
+2. 匹配能力更强大，支持单值（when(fruit)，匹配条件可以是字面量、常量变量或返回常量的表达式）、多值(1,2,3,4->)、范围(in 1..9)、类型（is Int）、表达式等多种匹配方式，甚至可以无参数适用，实现自定义复杂条件判断。比如判断数字区间、检测对象类型、匹配表达式结果等场景，when 表达式都能轻松应对。
+
+3. 无穿透风险，when 表达式的每个分支都是独立的，默认不会发生穿透。
+
+when 是表达式而非语句，会返回匹配分支的结果，可直接赋值给变量或作为函数返回值，进一步简化代码。
+
+when 可用在简化 if-else 多层嵌套上，消除嵌套缩进，提升代码可读性。
+
+对于 sealed class、enum、boolean 类型，编译器可以检查是否穷举了所有可能，可以不加 else，漏掉任何一项仍然会报错。
+
+无参数 when 的分支按照“异常场景->普通场景->默认场景”排序，符合日常逻辑习惯，便于理解。（UI中观察 statu 然后根据状态显示页面的代码就是这样的）。
+
+- when 与 if-else 链是什么区别？
+1. when 支持值/多值/区间/类型/集合多形态匹配，if 只能写布尔条件
+2. when 对于 menu、sealed class、boolean 有穷举性检查，if 没有
+
+什么时候用 if?如果条件之间有复杂逻辑组合，if 反而更清楚。
+
+- when 的集合成员匹配是 o(n) 还是 o(1)？
+
+取决于集合自己，集合匹配走的是 contains，hashset 就是 o(1)，treeset 就是 o(log n), array/list 就是 o(n)。如果是常量，编译器可以编译成 switch，不经过 contains。
+
+- sealed 的穷举性检查是怎么实现的？
+
+编译器做的是先列出这个 sealed 类型所有直接的非 sealed 子类型，再看 when 的分支有没有把他们都盖住。中间还套着 sealed 时，会先把那一层展开，缺任何一项又没有 else，就报错。从 Kotlin 1.7 起，当表达式和当语句用都做这个检查。
+
+普通类的子类可以写在任何地方，编译器列不出完整名单。当表达式用时必须有 else；当语句用时可以不写，没匹配上就什么都不做。
+
+- 使用中遇到过什么问题？
+
+案例一：网络状态用 sealed 建模，但 when 写了 else -> {}，新增一种 Timeout 状态后没补分支，页面卡在空白。修复为删掉 else，让编译器把遗漏点暴露出来。
+
+案例二：is 分支漏了 null，接口返回空值时走了“其他”分支，展示的是类型名而不是默认文案。
+
+- when 在 Android 上最常用的三个位置：
+  - 状态渲染 - 把 sealed 的 UiState 映射成界面动作（显示骨架屏/显示列表/显示错误），集中在一处便于审查。
+  - 错误码映射 - when(code) {in 500..599 -> "服务异常"...} 给用户可读文案，同时补日志。
+  - 多类型分支的差异化处理 - 比如分享渠道不同类型时用 is 分支分别处理。共同点是把“一堆 if 散在各处”收敛成一个可枚举的决策点，这本身就是价值。
+
+when 的收益不只是语法糖，而是把决策集中成一处可审查的结构。
+
+
+
+
 
 ## 资料收集
 
