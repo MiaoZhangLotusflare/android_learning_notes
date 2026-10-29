@@ -1,6 +1,6 @@
 # 面试题
 
-## 面试题 - 1 - Kotlin 基本语法与核心特性
+## 面试题 - 1 - Kotlin 基本语法与核心特性 - 完成
 
 1. val 和 var 到底有什么区别？val 就一定线程安全吗？
 
@@ -16,7 +16,7 @@
 
 7. kotlin when vs Java switch
 
-## 面试题 - 2 - Kotlin 函数与 Lambda
+## 面试题 - 2 - Kotlin 函数与 Lambda - 进行中
 
 1. 扩展函数到底是什么原理？能重写吗？
 
