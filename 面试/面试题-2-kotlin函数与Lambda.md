@@ -50,8 +50,6 @@
 
 扩展属性：给现有类增加一个访问的属性，同时不修改这个类的源码，需要添加 getter/setter 方法，没有字段，也不能写初始值，结果不会保存在对象里。
 
-
-
 扩展属性原理：顶层扩展属性会变成文件生成类里的静态方法，接收者作为第一个参数。解析时机也和扩展函数一样，编译器看变量的声明类型，在编译期决定调用哪个扩展属性，不看运行时的实际类型。
 
 ```kotlin
@@ -67,8 +65,126 @@ kotlin 如何决定调用哪个扩展函数：kotlin 在编译期就选定扩展
 
 ## 2. inline、reified、noinline、crossinline：这几个到底怎么配合？
 
+真正比较性能时，应使用<mark> JMH 或 kotlinx-benchmark</mark>，不要用只运行一次的 System.nanoTime() 测试下结论。
+
+inline 编译时将函数体直接插入到调用处，消除了函数调用带来的栈帧创建、参数传递等开销，对 Lambda 表达式进行深层优化，避免匿名类对象的创建。
+
+inlien 允许 Lambda 使用非局部返回。非局部返回只在 Lambda 直接作为参数传给内联函数时有效。如果 Lambda 先被存进变量、或者被传给一个普通函数，它将失去了内联上下文，不能再跳出外层函数。
+
+项目使用：很多项目都会重复写日志、耗时统计和异常处理，可以把固定流程放进一个内联函数。
+
+noinline：内联函数的函数参数类型（Lambda 参数）默认可以被内联，如果 Lambda 参数需要被保存到变量、作为参数传递给非内联函数，就要用 noinline 关掉它的内联。noinline 函数不允许非局部返回。
+
+crossinline：Lambda 仍然内联，但它被放进了另一个执行上下文，比如另一个 Lambda 或对象表达式里，此时需要用 crossinline，它暴露内联，同时禁止在这个 Lambda 里使用非局部返回。
+
+reified 在函数内部可以访问类型参数的具体类型。通常情况下，由于类型擦除（type erasure），在运行时是无法直接获取泛型类型参数的具体类型的。inline+reified 解决了这个问题。
+
+reified 关键字必须与 inline 关键字联用，这是因为 reified 的核心机制就是通过在编译期将函数体展开（内联）到调用点，才能在字节码中嵌入具体的类型信息。如果不是 inline 函数，无法进行这种编译期优化，也就无法实现类型实化。
+
+项目使用：json 与 class 的互相转换，编码与解码等。
+
+当调用一个带有 reified 泛型参数的 inline 函数时，编译器会在调用处为每个具体的泛型参数类型生成一份独立的字节码。这有点像函数重载，但实际上是编译器在编译时将 inline 函数的代码嵌入到调用点，并替换掉泛型参数为其实际类型。
+
+@PublishedApi：public 的内敛函数会呗复制到调用方模块，如果它内部访问了 internal 或 private 的声明，那些声明的字节码也必须在调用方可见。为了防止代码给公开并干扰 open/closed(OCP)开闭原则，Kotlin 允许将代码内部化，只要在方法或类中应用特殊注解 PublishedApi 即可。
+
+**内联函数一定比普通函数快吗？为什么？**
+
+inline 函数可以减少函数调用的开销，但它的副作用是会增加代码体积（DEX膨胀）。如果大量使用 inline 函数，并且这些函数体较大，可能会导致最终的 APK 或 Jar 文件变大，在 Android 开发中，过大的 DEX 文件可能会影响应用启动速度。
+
+<mark>dex文件，影响 APK 或 Jar 文件变大，影响应用启动速度，这个看一下是不是可以算在apk大小优化和应用启动时间优化里面？</mark>
+
+只对小而频繁调用的高阶函数使用内联。
+
+内联函数会影响库的升级方式：如果库里面修改了 public inline 函数的实现，但应用没有重新编译，应用里可能继续运行旧的内联函数。所以公共库里的内联函数需要特别注意。
+
+**常用内联函数**：
+
+* let：对象作为参数传进 lambda，块里用 it，返回 Lambda 的结果。
+
+* run：扩展形式 obj.run{}，对象是接收者，块里用 this，返回 Lambda 的结果。
+
+* with：接收对象和 Lambda，对象是接收者，块里用 this，返回 Lambda 的结果。with 不是扩展函数，作用和 obj.run{} 相同。
+
+* apply：对象是接收者，块里用 this，成员可以直接调用。返回这个对象本身，所以可以链式调用。返回的是这个对象，不是外层的调用者。
+
+* also：对象作为参数传进 Lambda，块里用 it。这里的 this 仍是外层的 this。返回这个对象本身，所以也可以链式调用。
+
+let、run、with 都是返回最后一行表达式的值，不要用 return，return 会从外层的 fun 返回，而不是从 Lambda 返回。
+
+<mark>内联与协程：suspend 函数不是自动 inline的，相反，它会生成状态机，有额外开销；只有显式加了 inline 关键字才会内联。协程库中的 launch、async 等构建器本身是 inline 的，但协程体内的 lambda 不是。</mark>
+
+<mark>内联与协程方面，等到看协程的时候再看看。</mark>
+
 ## 3. Lambda 表达式和匿名内部类有什么区别？
+
+Lambda 底层会实现单例匿名类（只有一个方法时）或新 Class（多个方法时），而匿名内部类每次调用都生成新 class。Lambda 不能访问外部非 final 变量（但Kotlin 做了捕获）。
+
+```kotlin
+// Kotlin Lambda
+val lambda = { x: Int -> x * 2 }
+// 编译后生成：Lambda$1.class
+
+// Java 匿名内部类
+val runnable = object : Runnable {
+    override fun run() { }
+}
+// 编译后生成：MainActivity$1.class（外部类$序号）
+```
+
+Android 实战场景：
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    // Lambda 捕获变量
+    fun demo() {
+        var count = 0
+        btnClick.setOnClickListener {
+            count++  // 捕获了 count，编译器会生成 IntRef 包装类
+            // 注意：count 是基本类型，捕获时编译器生成 IntRef 对象
+            // 如果 count 是引用类型，则捕获的是引用本身
+        }
+    }
+
+    // 协程中的变量捕获 —— 特别注意！
+    fun loadData() {
+        var data: String? = null
+
+        lifecycleScope.launch {
+            data = fetchData()  // 协程中赋值
+            // ⚠️ 这里的 data 被协程 lambda 捕获
+            // 但 launch 是异步的，launch 返回后 data 可能还没赋值
+        }
+
+        // ⚠️ 这里 data 大概率还是 null！
+        // 因为 launch 不会阻塞等待协程体执行完
+    }
+
+    // 正确做法：在协程内部完成所有逻辑
+    fun loadDataCorrect() {
+        lifecycleScope.launch {
+            val result = fetchData()  // 在协程内声明局部变量
+            updateUI(result)          // 在协程内使用
+        }
+    }
+}
+```
+
+面试加分项：
+
+* Lambda 捕获的本质：生成 VariableCapturingClass，内部类持有外部变量的引用。
+
+* 内存泄漏风险：非静态内部类持有外部类引用，如果 Lambda 逃逸到生命周期之外，可能导致内存泄漏。
+
+* JVM 层面的优化：Lambda 会在第一次调用时才生成类（invokedynamic），而不是编译时。
 
 ## 4. Lambda 捕获机制：会造成内存泄漏吗？
 
 ## 5. Kotlin 函数参数为什么是 val 不能修改？
+
+函数参数默认是 val，
+
+1. 对参数重新赋值只影响函数内部那个局部绑定，调用方手里的变量不会变。如果允许 var 参数，读代码的人很容易以为外面的变量也改了。
+2. 与主构造函数的 var/val 区分开，在主构造函数里写 val 或 var 会生成属性。
+
+函数参数为 val 也只是不被允许给参数变量本身重新赋值，如果修改参数指向对象的内容是可以的。
